@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"gopkg.inshopline.com/gsoul/component/go-sqlparser"
+	"github.com/xxlv/go-sqlparser"
 )
 
 func TestExprString(t *testing.T) {

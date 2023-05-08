@@ -3,7 +3,7 @@ package sqlparser_test
 import (
 	"testing"
 
-	"gopkg.inshopline.com/gsoul/component/go-sqlparser"
+	"github.com/xxlv/go-sqlparser"
 )
 
 func TestPos_String(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.inshopline.com/gsoul/component/go-sqlparser"
+	"github.com/xxlv/go-sqlparser"
 )
 
 func TestLexer_Lex(t *testing.T) {
