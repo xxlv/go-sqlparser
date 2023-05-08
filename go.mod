@@ -1,4 +1,4 @@
-module github.com/go-sqlparser
+module github.com/xxlv/go-sqlparser
 
 
 go 1.20
