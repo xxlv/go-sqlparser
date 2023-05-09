@@ -41,6 +41,7 @@ func (*OutputNames) node()     {}
 func (*ResultColumn) node()    {}
 func (*SelectStatement) node() {}
 func (*StringLit) node()       {}
+func (*MethodValuesLit) node() {}
 func (*TableName) node()       {}
 func (*Type) node()            {}
 func (*UnaryExpr) node()       {}
@@ -77,22 +78,23 @@ type Expr interface {
 	expr()
 }
 
-func (*BinaryExpr) expr()   {}
-func (*BindExpr) expr()     {}
-func (*BlobLit) expr()      {}
-func (*BoolLit) expr()      {}
-func (*Call) expr()         {}
-func (*CaseExpr) expr()     {}
-func (*Exists) expr()       {}
-func (*Exprs) expr()        {}
-func (*Ident) expr()        {}
-func (*NullLit) expr()      {}
-func (*NumberLit) expr()    {}
-func (*ParenExpr) expr()    {}
-func (*QualifiedRef) expr() {}
-func (*Range) expr()        {}
-func (*StringLit) expr()    {}
-func (*UnaryExpr) expr()    {}
+func (*BinaryExpr) expr()      {}
+func (*BindExpr) expr()        {}
+func (*BlobLit) expr()         {}
+func (*BoolLit) expr()         {}
+func (*Call) expr()            {}
+func (*CaseExpr) expr()        {}
+func (*Exists) expr()          {}
+func (*Exprs) expr()           {}
+func (*Ident) expr()           {}
+func (*NullLit) expr()         {}
+func (*NumberLit) expr()       {}
+func (*ParenExpr) expr()       {}
+func (*QualifiedRef) expr()    {}
+func (*Range) expr()           {}
+func (*StringLit) expr()       {}
+func (*MethodValuesLit) expr() {}
+func (*UnaryExpr) expr()       {}
 
 // ExprString returns the string representation of expr.
 // Returns a blank string if expr is nil.
@@ -276,6 +278,14 @@ func (t *Type) String() string {
 		return fmt.Sprintf("%s(%s)", t.Name.Name, t.Precision.String())
 	}
 	return t.Name.Name
+}
+
+type MethodValuesLit struct {
+	Value string
+}
+
+func (lit *MethodValuesLit) String() string {
+	return strings.Replace(lit.Value, `'`, `''`, -1)
 }
 
 type StringLit struct {
@@ -696,7 +706,7 @@ type UpsertClause struct {
 // String returns the string representation of the clause.
 func (c *UpsertClause) String() string {
 	var buf bytes.Buffer
-	buf.WriteString("ON CONFLICT")
+	buf.WriteString(" ON DUPLICATE KEY ")
 
 	if len(c.Columns) != 0 {
 		buf.WriteString(" (")
@@ -713,15 +723,16 @@ func (c *UpsertClause) String() string {
 		}
 	}
 
-	buf.WriteString(" DO")
+	// buf.WriteString(" DO")
 	if c.DoNothing {
 		buf.WriteString(" NOTHING")
 	} else {
-		buf.WriteString(" UPDATE SET ")
+		buf.WriteString(" UPDATE")
 		for i := range c.Assignments {
 			if i != 0 {
 				buf.WriteString(", ")
 			}
+			// `key`=VALUES(`key`)
 			buf.WriteString(c.Assignments[i].String())
 		}
 

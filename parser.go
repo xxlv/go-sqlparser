@@ -2,6 +2,7 @@ package sqlparser
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -213,10 +214,20 @@ func (p *Parser) parseUpsertClause() (_ *UpsertClause, err error) {
 
 	// Parse "ON CONFLICT"
 	p.lex()
-	if p.peek() != CONFLICT {
-		return &clause, p.errorExpected(p.pos, p.tok, "CONFLICT")
+
+	if isIdentToken(p.peek()) {
+		col, _ := p.parseIdent("column name")
+		if col.Name == "DUPLICATE" {
+			//  ON DUPLICATE KEY
+			p.lex()
+			p.lex()
+		}
 	}
-	p.lex()
+
+	// if p.peek() != CONFLICT {
+	// 	return &clause, p.errorExpected(p.pos, p.tok, "CONFLICT")
+	// }
+	// p.lex()
 
 	// Parse optional indexed column list & WHERE conditional.
 	if p.peek() == LP {
@@ -244,29 +255,36 @@ func (p *Parser) parseUpsertClause() (_ *UpsertClause, err error) {
 			}
 		}
 	}
-
+	// FOR PgSQL we dont need it know
 	// Parse "DO NOTHING" or "DO UPDATE SET".
-	if p.peek() != DO {
-		return &clause, p.errorExpected(p.pos, p.tok, "DO")
-	}
-	p.lex()
+	// println(p.peek())
+
+	// if isIdentToken(p.peek()) {
+	// 	col, _ := p.parseIdent("column name")
+	// 	println(col.Name)
+	// }
+
+	// if p.peek() != DO {
+	// 	return &clause, p.errorExpected(p.pos, p.tok, "DO")
+	// }
+	// p.lex()
 
 	// If next token is NOTHING, then read it and exit immediately.
-	if p.peek() == NOTHING {
-		p.lex()
-		clause.DoNothing = true
-		return &clause, nil
-	} else if p.peek() != UPDATE {
-		return &clause, p.errorExpected(p.pos, p.tok, "NOTHING or UPDATE SET")
-	}
+	// if p.peek() == NOTHING {
+	// 	p.lex()
+	// 	clause.DoNothing = true
+	// 	return &clause, nil
+	// } else if p.peek() != UPDATE {
+	// 	return &clause, p.errorExpected(p.pos, p.tok, "NOTHING or UPDATE SET")
+	// }
 
-	// Otherwise parse "UPDATE SET"
-	p.lex()
-	clause.DoUpdate = true
-	if p.peek() != SET {
-		return &clause, p.errorExpected(p.pos, p.tok, "SET")
-	}
-	p.lex()
+	// // Otherwise parse "UPDATE SET"
+	// p.lex()
+	// clause.DoUpdate = true
+	// if p.peek() != SET {
+	// 	return &clause, p.errorExpected(p.pos, p.tok, "SET")
+	// }
+	// p.lex()
 
 	// Parse list of assignments.
 	for {
@@ -443,6 +461,7 @@ func (p *Parser) parseAssignment() (_ *Assignment, err error) {
 		for {
 			col, err := p.parseIdent("column name")
 			if err != nil {
+
 				return &assignment, err
 			}
 			assignment.Columns = append(assignment.Columns, col)
@@ -463,7 +482,7 @@ func (p *Parser) parseAssignment() (_ *Assignment, err error) {
 		return &assignment, p.errorExpected(p.pos, p.tok, "=")
 	}
 	p.lex()
-
+	// a=b 解析b
 	if assignment.Expr, err = p.ParseExpr(); err != nil {
 		return &assignment, err
 	}
@@ -878,6 +897,7 @@ func (p *Parser) ParseExpr() (expr Expr, err error) {
 
 func (p *Parser) parseOperand() (expr Expr, err error) {
 	_, tok, lit := p.lex()
+
 	switch tok {
 	case IDENT, QIDENT:
 		ident := identByNameAndTok(lit, tok)
@@ -915,6 +935,17 @@ func (p *Parser) parseOperand() (expr Expr, err error) {
 	case NOT, EXISTS:
 		p.unlex()
 		return p.parseExists()
+	case VALUES:
+		// VALUES(`col`) 作为一个表达式整体 这里不能是string
+		// 注意这里的 VALUES(`col`) 不能是 'VALUES(`col`)'
+		p.lex()
+		if isIdentToken(p.peek()) {
+			col, _ := p.parseIdent("column name")
+			lit = fmt.Sprintf("VALUES (`%s`)", col.Name)
+			p.lex()
+		}
+		v := &MethodValuesLit{Value: lit}
+		return v, nil
 	default:
 		return nil, p.errorExpected(p.pos, p.tok, "expression")
 	}
