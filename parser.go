@@ -95,7 +95,6 @@ func (p *Parser) parseIdent(desc string) (*Ident, error) {
 func (p *Parser) parseInsertStatement() (_ *InsertStatement, err error) {
 	assert(p.peek() == INSERT)
 	p.lex()
-
 	var stmt InsertStatement
 
 	if p.peek() != INTO {
@@ -162,7 +161,9 @@ func (p *Parser) parseInsertStatement() (_ *InsertStatement, err error) {
 
 			for {
 				expr, err := p.ParseExpr()
+
 				if err != nil {
+
 					return &stmt, err
 				}
 				exprs.Exprs = append(exprs.Exprs, expr)
@@ -947,6 +948,9 @@ func (p *Parser) parseOperand() (expr Expr, err error) {
 		v := &MethodValuesLit{Value: lit}
 		return v, nil
 	default:
+
+		fmt.Printf("%+v", p)
+		println("======================================asdadasd===")
 		return nil, p.errorExpected(p.pos, p.tok, "expression")
 	}
 }
