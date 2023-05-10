@@ -42,6 +42,7 @@ func (*ResultColumn) node()    {}
 func (*SelectStatement) node() {}
 func (*StringLit) node()       {}
 func (*MethodValuesLit) node() {}
+func (*DefaultLit) node()      {}
 func (*TableName) node()       {}
 func (*Type) node()            {}
 func (*UnaryExpr) node()       {}
@@ -94,6 +95,7 @@ func (*QualifiedRef) expr()    {}
 func (*Range) expr()           {}
 func (*StringLit) expr()       {}
 func (*MethodValuesLit) expr() {}
+func (*DefaultLit) expr()      {}
 func (*UnaryExpr) expr()       {}
 
 // ExprString returns the string representation of expr.
@@ -278,6 +280,15 @@ func (t *Type) String() string {
 		return fmt.Sprintf("%s(%s)", t.Name.Name, t.Precision.String())
 	}
 	return t.Name.Name
+}
+
+type DefaultLit struct {
+	Value string
+}
+
+// for mysql
+func (lit *DefaultLit) String() string {
+	return "NULL"
 }
 
 type MethodValuesLit struct {
@@ -676,6 +687,7 @@ func (s *InsertStatement) String() string {
 				if j != 0 {
 					buf.WriteString(", ")
 				}
+
 				buf.WriteString(expr.String())
 			}
 			buf.WriteString(")")

@@ -144,6 +144,7 @@ func (p *Parser) parseInsertStatement() (_ *InsertStatement, err error) {
 
 	switch p.peek() {
 	case DEFAULT:
+
 		p.lex()
 		if p.peek() != VALUES {
 			return &stmt, p.errorExpected(p.pos, p.tok, "VALUES")
@@ -152,6 +153,7 @@ func (p *Parser) parseInsertStatement() (_ *InsertStatement, err error) {
 		p.lex()
 	case VALUES:
 		p.lex()
+
 		for {
 			var exprs Exprs
 			if p.peek() != LP {
@@ -176,6 +178,7 @@ func (p *Parser) parseInsertStatement() (_ *InsertStatement, err error) {
 				p.lex()
 			}
 			p.lex()
+
 			stmt.Expressions = append(stmt.Expressions, &exprs)
 
 			if p.peek() != COMMA {
@@ -213,6 +216,7 @@ func (p *Parser) parseUpsertClause() (_ *UpsertClause, err error) {
 
 	var clause UpsertClause
 
+	// ON CONFLICT only work on postgresql
 	// Parse "ON CONFLICT"
 	p.lex()
 
@@ -947,10 +951,14 @@ func (p *Parser) parseOperand() (expr Expr, err error) {
 		}
 		v := &MethodValuesLit{Value: lit}
 		return v, nil
-	default:
+	case DEFAULT:
+		// TODO ?
+		// insert into (c1,c2) values(?,?,?,DEFAULT)
+		// NULL
+		v := &DefaultLit{Value: lit}
+		return v, nil
 
-		fmt.Printf("%+v", p)
-		println("======================================asdadasd===")
+	default:
 		return nil, p.errorExpected(p.pos, p.tok, "expression")
 	}
 }
